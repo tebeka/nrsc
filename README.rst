@@ -10,11 +10,12 @@ Invocation
 
     nrsc path_to_resource_dir
 
-This will emit to standard output a Go source file code (in package `main`)
+This will create a local directory called `nrsc` which you can import in your
+code.
 
 API
 ===
-The main object is `nrsc`, it has the following interface
+The `nrsc` package has the following interface
 
 `nrsc.Handle(prefix string)`
     This will register with the `net/http` module to handle all paths starting with prefix. 
@@ -50,4 +51,4 @@ Resource Interface
 Status
 ======
 Current status of the code is "playing". Nothing really written. There's an
-example implementation in the `resources` directory and a web server in `hw.go`.
+example implementation in the `playground` directory and a web server in `hw.go`.
