@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime"
 	"os"
 	"path/filepath"
 	"strings"
-	"mime"
 )
 
 var ignoredDirs = map[string]bool{
@@ -69,7 +69,7 @@ func writeResource(root string, file *File, out io.Writer) error {
 	return nil
 }
 
-func die(format string, args... interface{}) {
+func die(format string, args ...interface{}) {
 	message := fmt.Sprintf(format, args...)
 	fmt.Fprintf(os.Stderr, "error: %s\n", message)
 	os.Exit(1)
