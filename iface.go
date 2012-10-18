@@ -1,3 +1,6 @@
+package main
+
+const iface = `
 package nrsc
 
 import (
@@ -10,33 +13,32 @@ import (
 
 type Resource interface {
 	Open() io.Reader
-	Size() int
-	Type() string
-	Time() time.Time
+	Size() int64
+	MimeType() string
+	ModTime() time.Time
 }
 
-var resources map[string]Resource
-
 type resource struct {
+	size  int64
+	mtime time.Time
+	mtype string
 	data  []byte
-	ctype string
-	time  time.Time
 }
 
 func (rsc *resource) Open() io.Reader {
 	return bytes.NewReader(rsc.data)
 }
 
-func (rsc *resource) Size() int {
-	return len(rsc.data)
+func (rsc *resource) Size() int64 {
+	return rsc.size
 }
 
-func (rsc *resource) Type() string {
-	return rsc.ctype
+func (rsc *resource) MimeType() string {
+	return rsc.mtype
 }
 
-func (rsc *resource) Time() time.Time {
-	return rsc.time
+func (rsc *resource) ModTime() time.Time {
+	return rsc.mtime
 }
 
 type handler int
@@ -48,9 +50,11 @@ func (h handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", rsc.Type())
+	if len(rsc.MimeType()) != 0 {
+		w.Header().Set("Content-Type", rsc.MimeType())
+	}
 	w.Header().Set("Content-Size", fmt.Sprintf("%d", rsc.Size()))
-	w.Header().Set("Last-Modified", rsc.Time().UTC().Format(http.TimeFormat))
+	w.Header().Set("Last-Modified", rsc.ModTime().UTC().Format(http.TimeFormat))
 
 	io.Copy(w, rsc.Open())
 }
@@ -63,15 +67,4 @@ func Handle(prefix string) {
 	var h handler
 	http.Handle(prefix, http.StripPrefix(prefix, h))
 }
-
-func init() {
-	resources = make(map[string]Resource)
-	resources["hello"] = &resource{
-		[]byte{
-			0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x74,
-			0x68, 0x65, 0x72, 0x65, 0xa,
-		},
-		"text/plain",
-		time.Unix(0, 0),
-	}
-}
+`

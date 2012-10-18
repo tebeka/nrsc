@@ -59,7 +59,7 @@ func writeResource(prefix int, file *File, out io.Writer) error {
 	fmt.Fprintf(out, "\t\tmtime: time.Unix(%d, 0),\n", info.ModTime().Unix())
 	mtype := mime.TypeByExtension(filepath.Ext(path))
 	fmt.Fprintf(out, "\t\tmtype: \"%s\",\n", mtype)
-	fmt.Fprintf(out, "\t\tdata: {")
+	fmt.Fprintf(out, "\t\tdata: []byte{")
 	for _, b := range data {
 		fmt.Fprintf(out, "%d, ", b)
 	}
@@ -83,8 +83,29 @@ func dirExists(path string) bool {
 	return false
 }
 
+func writeResources(root string, out io.Writer) error {
+	prefix := len(root)
+	if root[len(root)-1] != '/' {
+		prefix += 1
+	}
+
+	fmt.Fprintf(out, "package nrsc\nimport \"time\"\n")
+	fmt.Fprintf(out, "var resources = map[string]Resource {\n")
+
+	for file := range iterfiles(root) {
+		if err := writeResource(prefix, file, out); err != nil {
+			return fmt.Errorf("can't write %s - %s", file.path, err)
+		}
+	}
+
+	fmt.Fprintf(out, "\n}")
+
+	return nil
+}
+
 func main() {
 	var root string
+	outdir := "nrsc"
 
 	flag.StringVar(&root, "root", "", "root direcotry")
 	flag.Parse()
@@ -97,8 +118,8 @@ func main() {
 		die("%s is not a directory", root)
 	}
 
-	if !dirExists("nrsc") {
-		if err := os.Mkdir("nrsc", 0700); err != nil {
+	if !dirExists(outdir) {
+		if err := os.Mkdir(outdir, 0700); err != nil {
 			die("can't create nrsc directory - %s", err)
 		}
 	}
@@ -107,20 +128,26 @@ func main() {
 
 	defer func() {
 		if !ok {
-			os.RemoveAll("nrsc")
+			fmt.Printf("cleaning %s\n", outdir)
+			os.RemoveAll(outdir)
 		}
 	}()
 
-	out, err := os.Create("nrsc/nrsc.go")
+	outfile := fmt.Sprintf("%s/nrsc.go", outdir)
+	err := ioutil.WriteFile(outfile, []byte(iface), 0666)
 	if err != nil {
-		die("can't create nrsc/nrsc.go - %s", err)
+		die("can't create %s - %s", outfile, err)
 	}
 
-	prefix := len(root)-1
-	for file := range iterfiles(root) {
-		if err := writeResource(prefix, file, out); err != nil {
-			die("can't write %s - %s", file.path, err)
-		}
+	outfile = fmt.Sprintf("%s/data.go", outdir)
+	out, err := os.Create(outfile)
+	if err != nil {
+		die("can't create %s - %s", outfile, err)
 	}
+
+	if err := writeResources(root, out); err != nil {
+		die("%s", err)
+	}
+
 	ok = true
 }
