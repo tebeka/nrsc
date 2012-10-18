@@ -103,7 +103,7 @@ func init() {
 	os.Chdir(root)
 	defer os.Chdir(cwd)
 
-	cmd := exec.Command(path("nrsc"), "-root", path("test-resources"))
+	cmd := exec.Command(path("nrsc"), path("test-resources"))
 	if err := cmd.Run(); err != nil {
 		panic(err)
 	}

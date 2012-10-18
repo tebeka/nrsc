@@ -114,11 +114,13 @@ func writeResources(root string, out io.Writer) error {
 }
 
 func main() {
-	var root string
 	var showVersion bool
 
-	flag.StringVar(&root, "root", "", "root direcotry")
 	flag.BoolVar(&showVersion, "version", false, "show version and exit")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "usage: %s RESOURCE_DIR\n", os.Args[0])
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	if showVersion {
@@ -126,9 +128,11 @@ func main() {
 		os.Exit(0)
 	}
 
-	if len(root) == 0 {
-		die("<root> is required")
+	if flag.NArg() != 1 {
+		die("wrong number of parameters")
 	}
+
+	root := flag.Arg(0)
 
 	if !dirExists(root) {
 		die("%s is not a directory", root)
