@@ -4,6 +4,12 @@
 deploy a single executable as a web server with all the CSS, image files, JS ...
 included.
 
+Installing
+==========
+::
+
+    go get bitbucket.org/tebeka/nrsc
+
 Invocation
 ==========
 ::
@@ -80,4 +86,6 @@ https://bitbucket.org/tebeka/nrsc
     
 License
 =======
-MIT (see `LICENSE.txt`)
+MIT (see `LICENSE.txt`_)
+
+.. _`LICENSE.txt`: https://bitbucket.org/tebeka/nrsc/src/tip/LICENSE.txt
