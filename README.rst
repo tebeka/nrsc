@@ -27,7 +27,6 @@ The `nrsc` package has the following interface
     
 
 `nrsc.Get(path string) Resource`
-
     Will return a resource interface (or `nil` if not found) (see resource interface below).
     This allows you more control on how to serve.
 
@@ -38,17 +37,47 @@ Resource Interface
 `func Open() io.Reader`
     Returns a reader to resource data
 
-`func Length() int`
+`func Size() int64`
     Returns resource size (to be used with `Content-Length` HTTP header).
 
-`func Type() string`
+`func MimeType() string`
     Returns mime type (to be used with `Content-Type` HTTP header).
 
-`func Time() time.Time`
+`func ModTime() time.Time`
     Returns modification time (to be used with `Last-Modified` HTTP header).
-    
 
-Status
-======
-Current status of the code is "playing". Nothing really written. There's an
-example implementation in the `playground` directory and a web server in `hw.go`.
+
+Example Code
+------------
+::
+
+    package main
+
+    import (
+            "fmt"
+            "net/http"
+            "os"
+
+            "./nrsc"
+    )
+
+    func indexHandler(w http.ResponseWriter, req *http.Request) {
+            fmt.Fprintf(w, "Hello World\n")
+    }
+
+    func main() {
+            nrsc.Handle("/static/")
+            http.HandleFunc("/", indexHandler)
+            if err := http.ListenAndServe(":8080", nil); err != nil {
+                    fmt.Fprintf(os.Stderr, "error: %s\n", err)
+                    os.Exit(1)
+            }
+    }
+
+Contact
+=======
+https://bitbucket.org/tebeka/nrsc
+    
+License
+=======
+MIT (see `LICENSE.txt`)

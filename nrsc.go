@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+const (
+	version = "0.1.0"
+	outdir  = "nrsc"
+)
+
 var ignoredDirs = map[string]bool{
 	".svn": true,
 	".hg":  true,
@@ -22,6 +27,7 @@ type File struct {
 	info os.FileInfo
 }
 
+// iterfiles iterats of directory tree, returns a channel with files to process
 func iterfiles(root string) chan *File {
 	out := make(chan *File)
 
@@ -46,6 +52,7 @@ func iterfiles(root string) chan *File {
 	return out
 }
 
+// writeResource write resource code to out
 func writeResource(prefix int, file *File, out io.Writer) error {
 	data, err := ioutil.ReadFile(file.path)
 	if err != nil {
@@ -68,12 +75,14 @@ func writeResource(prefix int, file *File, out io.Writer) error {
 	return nil
 }
 
+// die prints error and exists the program with exit status 1
 func die(format string, args ...interface{}) {
 	message := fmt.Sprintf(format, args...)
 	fmt.Fprintf(os.Stderr, "error: %s\n", message)
 	os.Exit(1)
 }
 
+// dirExists return true if path exists and is a directory
 func dirExists(path string) bool {
 	info, err := os.Stat(path)
 	if err == nil {
@@ -83,6 +92,7 @@ func dirExists(path string) bool {
 	return false
 }
 
+// writeResources writes the go code for the resources file
 func writeResources(root string, out io.Writer) error {
 	prefix := len(root)
 	if root[len(root)-1] != '/' {
@@ -105,10 +115,16 @@ func writeResources(root string, out io.Writer) error {
 
 func main() {
 	var root string
-	outdir := "nrsc"
+	var showVersion bool
 
 	flag.StringVar(&root, "root", "", "root direcotry")
+	flag.BoolVar(&showVersion, "version", false, "show version and exit")
 	flag.Parse()
+
+	if showVersion {
+		fmt.Printf("nrsc %s\n", version)
+		os.Exit(0)
+	}
 
 	if len(root) == 0 {
 		die("<root> is required")
