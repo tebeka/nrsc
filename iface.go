@@ -1,3 +1,4 @@
+/* "interface" code written to source file. */
 package main
 
 const iface = `

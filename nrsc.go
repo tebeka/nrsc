@@ -1,3 +1,4 @@
+/* nrsc - package resource files inside a go source file for single exectable deploy. */
 package main
 
 import (
