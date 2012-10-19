@@ -37,6 +37,10 @@ The `nrsc` package has the following interface
     This allows you more control on how to serve.
 
 
+`LoadTemplates(t *template.Template, filenames ...string) (*template.Template, error)`
+    Will load named templates from resources. If the argument "t" is `nil`, it is
+    created from the first resource.
+
 Resource Interface
 ------------------
 

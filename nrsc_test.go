@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -28,6 +29,30 @@ func TestSub(t *testing.T) {
 		"Content-Type": "image/x-icon",
 	}
 	checkPath(t, "sub/favicon.ico", expected)
+}
+
+// / serves a template
+func TestTempalte(t *testing.T) {
+	server := startServer(t)
+	if server == nil {
+		t.Fatalf("can't start server")
+	}
+	defer server.Process.Kill()
+
+	url := fmt.Sprintf("http://localhost:%d", port)
+	resp, err := http.Get(url)
+	if err != nil {
+		t.Fatalf("can't GET / - %s", err)
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("can't read body - %s", err)
+	}
+
+	if string(data) != "The number is 7\n" {
+		t.Fatalf("bad template reply - %s", string(data))
+	}
 }
 
 func createMain() error {
@@ -156,15 +181,25 @@ import (
 	"./nrsc"
 )
 
+type params struct {
+	Number  int
+}
+
 func indexHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "Hello World\n")
+	t, err := nrsc.LoadTemplates(nil, "t.html")
+	if err != nil {
+		http.NotFound(w, req)
+	}
+	if err = t.Execute(w, params{7}); err != nil {
+		http.NotFound(w, req)
+	}
 }
 
 func main() {
 	nrsc.Handle("/static/")
 	http.HandleFunc("/", indexHandler)
-	if err := http.ListenAndServe(":%d", nil); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %%s\n", err)
+	if err := http.ListenAndServe(":9888", nil); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
 	}
 }
