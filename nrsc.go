@@ -28,6 +28,8 @@ type File struct {
 	info os.FileInfo
 }
 
+var verbose bool
+
 // iterfiles iterats of directory tree, returns a channel with files to process
 func iterfiles(root string) chan *File {
 	out := make(chan *File)
@@ -83,6 +85,14 @@ func die(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
+// info prints some information to os.Stdout if global "verbose" is true
+func info(format string, args ...interface{}) {
+	if !verbose {
+		return
+	}
+	fmt.Printf(format, args...)
+}
+
 // dirExists return true if path exists and is a directory
 func dirExists(path string) bool {
 	info, err := os.Stat(path)
@@ -104,6 +114,7 @@ func writeResources(root string, out io.Writer) error {
 	fmt.Fprintf(out, "var resources = map[string]Resource {\n")
 
 	for file := range iterfiles(root) {
+		info("adding %s\n", file.path)
 		if err := writeResource(prefix, file, out); err != nil {
 			return fmt.Errorf("can't write %s - %s", file.path, err)
 		}
@@ -118,6 +129,7 @@ func main() {
 	var showVersion bool
 
 	flag.BoolVar(&showVersion, "version", false, "show version and exit")
+	flag.BoolVar(&verbose, "v", false, "be verbose")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: %s RESOURCE_DIR\n", os.Args[0])
 		flag.PrintDefaults()
@@ -155,12 +167,14 @@ func main() {
 	}()
 
 	outfile := fmt.Sprintf("%s/nrsc.go", outdir)
+	info("creating %s\n", outfile)
 	err := ioutil.WriteFile(outfile, []byte(iface), 0666)
 	if err != nil {
 		die("can't create %s - %s", outfile, err)
 	}
 
 	outfile = fmt.Sprintf("%s/data.go", outdir)
+	info("creating %s\n", outfile)
 	out, err := os.Create(outfile)
 	if err != nil {
 		die("can't create %s - %s", outfile, err)
