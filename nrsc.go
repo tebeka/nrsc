@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"mime"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,8 +66,6 @@ func writeResource(prefix int, file *File, out io.Writer) error {
 	fmt.Fprintf(out, "\t\"%s\": &resource{\n", key)
 	fmt.Fprintf(out, "\t\tsize: %d,\n", info.Size())
 	fmt.Fprintf(out, "\t\tmtime: time.Unix(%d, 0),\n", info.ModTime().Unix())
-	mtype := mime.TypeByExtension(filepath.Ext(path))
-	fmt.Fprintf(out, "\t\tmtype: \"%s\",\n", mtype)
 	fmt.Fprintf(out, "\t\tdata: []byte{")
 	for _, b := range data {
 		fmt.Fprintf(out, "%d, ", b)
