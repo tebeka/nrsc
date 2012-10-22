@@ -50,9 +50,6 @@ Resource Interface
 `func Size() int64`
     Returns resource size (to be used with `Content-Length` HTTP header).
 
-`func MimeType() string`
-    Returns mime type (to be used with `Content-Type` HTTP header).
-
 `func ModTime() time.Time`
     Returns modification time (to be used with `Last-Modified` HTTP header).
 
