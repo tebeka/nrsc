@@ -14,6 +14,8 @@ Installing
 
 Also grab the `nrsc` script from here_
 
+And you'll need `zip` somewhere in your path.
+
 .. _here: http://bit.ly/nrsc-script
 
 Invocation
