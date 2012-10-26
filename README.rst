@@ -1,8 +1,10 @@
 `nrsc` - Resource Compiler for Go
 =================================
+
 `nrsc` compiles a directory of resource into a Go source file so you can still
 deploy a single executable as a web server with all the CSS, image files, JS ...
 included.
+
 
 Installing
 ==========
@@ -14,10 +16,7 @@ Invocation
 ==========
 ::
 
-    nrsc path_to_resource_dir
 
-This will create a local directory called `nrsc` which you can import in your
-code.
 
 API
 ===
@@ -44,7 +43,7 @@ The `nrsc` package has the following interface
 Resource Interface
 ------------------
 
-`func Open() io.Reader`
+`func Open() (io.Reader, error)`
     Returns a reader to resource data
 
 `func Size() int64`
@@ -65,7 +64,7 @@ Example Code
             "net/http"
             "os"
 
-            "./nrsc"
+            "nrsc"
     )
 
     func indexHandler(w http.ResponseWriter, req *http.Request) {
