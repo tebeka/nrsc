@@ -1,185 +1,161 @@
-/* nrsc - package resource files inside a go source file for single exectable deploy. */
-package main
+package nrsc
 
 import (
-	"flag"
+	"archive/zip"
 	"fmt"
+	"html/template"
 	"io"
 	"io/ioutil"
+	"mime"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
-	version = "0.1.0"
-	outdir  = "nrsc"
+	Version = "0.2.0"
 )
 
-var ignoredDirs = map[string]bool{
-	".svn": true,
-	".hg":  true,
-	".git": true,
-}
+var ResourceMap map[string]Resource
 
-type File struct {
-	path string
-	info os.FileInfo
-}
-
-var verbose bool
-
-// iterfiles iterats of directory tree, returns a channel with files to process
-func iterfiles(root string) chan *File {
-	out := make(chan *File)
-
-	walkfn := func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			if ignoredDirs[strings.ToLower(info.Name())] {
-				return filepath.SkipDir
-			}
-		} else {
-			if info.Name()[0] != '.' {
-				out <- &File{path, info}
-			}
-		}
-		return nil
-	}
-
-	go func() {
-		filepath.Walk(root, walkfn)
-		close(out)
-	}()
-
-	return out
-}
-
-// writeResource write resource code to out
-func writeResource(prefix int, file *File, out io.Writer) error {
-	data, err := ioutil.ReadFile(file.path)
+func loadMap() (map[string]Resource, error) {
+	this := os.Args[0]
+	file, err := os.Open(this)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	path, info := file.path, file.info
 
-	key := path[prefix:]
-	fmt.Fprintf(out, "\t\"%s\": &resource{\n", key)
-	fmt.Fprintf(out, "\t\tsize: %d,\n", info.Size())
-	fmt.Fprintf(out, "\t\tmtime: time.Unix(%d, 0),\n", info.ModTime().Unix())
-	fmt.Fprintf(out, "\t\tdata: []byte{")
-	for _, b := range data {
-		fmt.Fprintf(out, "%d, ", b)
+	info, err := file.Stat()
+	if err != nil {
+		return nil, err
 	}
-	fmt.Fprintf(out, "\t\t},\n\t},\n")
+	rdr, err := zip.NewReader(file, info.Size())
+	if err != nil {
+		return nil, err
+	}
 
-	return nil
+	entries := make(map[string]Resource)
+	for _, file := range rdr.File {
+		if file.FileInfo().IsDir() {
+			continue
+		}
+		entries[file.Name] = &resource{file}
+	}
+
+	return entries, nil
 }
 
-// die prints error and exists the program with exit status 1
-func die(format string, args ...interface{}) {
-	message := fmt.Sprintf(format, args...)
-	fmt.Fprintf(os.Stderr, "error: %s\n", message)
-	os.Exit(1)
+func Initialize() error {
+	var err error
+	ResourceMap, err = loadMap()
+	return err
 }
 
-// info prints some information to os.Stdout if global "verbose" is true
-func info(format string, args ...interface{}) {
-	if !verbose {
+type Resource interface {
+	Name() string
+	Open() (io.Reader, error)
+	Size() int64
+	ModTime() time.Time
+}
+
+type resource struct {
+	entry *zip.File
+}
+
+func (rsc *resource) Name() string {
+	return rsc.entry.Name
+}
+
+func (rsc *resource) Open() (io.Reader, error) {
+	return rsc.entry.Open()
+}
+
+func (rsc *resource) Size() int64 {
+	return rsc.entry.FileInfo().Size()
+}
+
+func (rsc *resource) ModTime() time.Time {
+	return rsc.entry.FileInfo().ModTime()
+}
+
+type handler int
+
+func (h handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	rsc := ResourceMap[req.URL.Path]
+	if rsc == nil {
+		http.NotFound(w, req)
 		return
 	}
-	fmt.Printf(format, args...)
-}
 
-// dirExists return true if path exists and is a directory
-func dirExists(path string) bool {
-	info, err := os.Stat(path)
-	if err == nil {
-		return info.IsDir()
-	}
-
-	return false
-}
-
-// writeResources writes the go code for the resources file
-func writeResources(root string, out io.Writer) error {
-	prefix := len(root)
-	if root[len(root)-1] != '/' {
-		prefix += 1
-	}
-
-	fmt.Fprintf(out, "package nrsc\nimport \"time\"\n")
-	fmt.Fprintf(out, "var resources = map[string]Resource {\n")
-
-	for file := range iterfiles(root) {
-		info("adding %s\n", file.path)
-		if err := writeResource(prefix, file, out); err != nil {
-			return fmt.Errorf("can't write %s - %s", file.path, err)
-		}
-	}
-
-	fmt.Fprintf(out, "\n}")
-
-	return nil
-}
-
-func main() {
-	var showVersion bool
-
-	flag.BoolVar(&showVersion, "version", false, "show version and exit")
-	flag.BoolVar(&verbose, "v", false, "be verbose")
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: %s RESOURCE_DIR\n", os.Args[0])
-		flag.PrintDefaults()
-	}
-	flag.Parse()
-
-	if showVersion {
-		fmt.Printf("nrsc %s\n", version)
-		os.Exit(0)
-	}
-
-	if flag.NArg() != 1 {
-		die("wrong number of parameters")
-	}
-
-	root := flag.Arg(0)
-
-	if !dirExists(root) {
-		die("%s is not a directory", root)
-	}
-
-	if !dirExists(outdir) {
-		if err := os.Mkdir(outdir, 0700); err != nil {
-			die("can't create nrsc directory - %s", err)
-		}
-	}
-
-	ok := false
-
-	defer func() {
-		if !ok {
-			fmt.Printf("cleaning %s\n", outdir)
-			os.RemoveAll(outdir)
-		}
-	}()
-
-	outfile := fmt.Sprintf("%s/nrsc.go", outdir)
-	info("creating %s\n", outfile)
-	err := ioutil.WriteFile(outfile, []byte(iface), 0666)
+	rdr, err := rsc.Open()
 	if err != nil {
-		die("can't create %s - %s", outfile, err)
+		message := fmt.Sprintf("can't open %s - %s", rsc.Name(), err)
+		http.Error(w, message, http.StatusInternalServerError)
 	}
 
-	outfile = fmt.Sprintf("%s/data.go", outdir)
-	info("creating %s\n", outfile)
-	out, err := os.Create(outfile)
-	if err != nil {
-		die("can't create %s - %s", outfile, err)
+	mtype := mime.TypeByExtension(filepath.Ext(req.URL.Path))
+	if len(mtype) != 0 {
+		w.Header().Set("Content-Type", mtype)
+	}
+	w.Header().Set("Content-Size", fmt.Sprintf("%d", rsc.Size()))
+	w.Header().Set("Last-Modified", rsc.ModTime().UTC().Format(http.TimeFormat))
+
+	io.Copy(w, rdr)
+}
+
+// Get returns the named resource (nil if not found)
+func Get(path string) Resource {
+	return ResourceMap[path]
+}
+
+// Handle register HTTP handler under prefix
+func Handle(prefix string) {
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	var h handler
+	http.Handle(prefix, http.StripPrefix(prefix, h))
+}
+
+// LoadTemplates loads named templates from resources.
+// If the argument "t" is nil, it is created from the first resource.
+func LoadTemplates(t *template.Template, filenames ...string) (*template.Template, error) {
+	if len(filenames) == 0 {
+		// Not really a problem, but be consistent.
+		return nil, fmt.Errorf("no files named in call to LoadTemplates")
 	}
 
-	if err := writeResources(root, out); err != nil {
-		die("%s", err)
-	}
+	for _, filename := range filenames {
+		rsc := Get(filename)
+		if rsc == nil {
+			return nil, fmt.Errorf("can't find %s", filename)
+		}
 
-	ok = true
+		rdr, err := rsc.Open()
+		if err != nil {
+			return nil, fmt.Errorf("can't open %s - %s", filename, err)
+		}
+		data, err := ioutil.ReadAll(rdr)
+		if err != nil {
+			return nil, err
+		}
+
+		var tmpl *template.Template
+		name := filepath.Base(filename)
+		if t == nil {
+			t = template.New(name)
+		}
+		if name == t.Name() {
+			tmpl = t
+		} else {
+			tmpl = t.New(name)
+		}
+		_, err = tmpl.Parse(string(data))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return t, nil
 }
