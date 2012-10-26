@@ -135,7 +135,7 @@ func init() {
 		panic(err)
 	}
 
-	cmd = exec.Command(path("pack.sh"), "nrsc-test", path("test-resources"))
+	cmd = exec.Command(path("nrsc"), "nrsc-test", path("test-resources"))
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("error packing: %s\n", err)
 		panic(err)
