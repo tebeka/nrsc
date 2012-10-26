@@ -1,7 +1,7 @@
 `nrsc` - Resource Compiler for Go
 =================================
 
-`nrsc` compiles a directory of resource into a Go source file so you can still
+`nrsc`  a directory of resource into a Go source file so you can still
 deploy a single executable as a web server with all the CSS, image files, JS ...
 included.
 
@@ -12,10 +12,16 @@ Installing
 
     go get bitbucket.org/tebeka/nrsc
 
+Also grab the `nrsc` script from here_
+
+.. _here: http://bit.ly/nrsc-script
+
 Invocation
 ==========
 ::
 
+    go build
+    nrsc <executable> <resource dir>
 
 
 API
