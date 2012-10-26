@@ -97,6 +97,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		message := fmt.Sprintf("can't open %s - %s", rsc.Name(), err)
 		http.Error(w, message, http.StatusInternalServerError)
 	}
+	defer rdr.Close()
 
 	mtype := mime.TypeByExtension(filepath.Ext(req.URL.Path))
 	if len(mtype) != 0 {
@@ -106,7 +107,6 @@ func (h handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Last-Modified", rsc.ModTime().UTC().Format(http.TimeFormat))
 
 	io.Copy(w, rdr)
-	rdr.Close()
 }
 
 // Get returns the named resource (nil if not found)
