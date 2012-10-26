@@ -205,8 +205,8 @@ func indexHandler(w http.ResponseWriter, req *http.Request) {
 func main() {
 	nrsc.Handle("/static/")
 	http.HandleFunc("/", indexHandler)
-	if err := http.ListenAndServe(":9888", nil); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %d\n", err)
+	if err := http.ListenAndServe(":%d", nil); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %%s\n", err)
 		os.Exit(1)
 	}
 }
