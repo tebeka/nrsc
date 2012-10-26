@@ -58,7 +58,7 @@ func Initialize() error {
 
 type Resource interface {
 	Name() string
-	Open() (io.Reader, error)
+	Open() (io.ReadCloser, error)
 	Size() int64
 	ModTime() time.Time
 }
@@ -71,7 +71,7 @@ func (rsc *resource) Name() string {
 	return rsc.entry.Name
 }
 
-func (rsc *resource) Open() (io.Reader, error) {
+func (rsc *resource) Open() (io.ReadCloser, error) {
 	return rsc.entry.Open()
 }
 
@@ -106,6 +106,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Last-Modified", rsc.ModTime().UTC().Format(http.TimeFormat))
 
 	io.Copy(w, rdr)
+	rdr.Close()
 }
 
 // Get returns the named resource (nil if not found)
