@@ -80,13 +80,6 @@ func initDir() error {
 	return createMain()
 }
 
-func build() {
-	cmd := exec.Command("go", "build")
-	if err := cmd.Run(); err != nil {
-		panic(err)
-	}
-}
-
 func get(path string) (*http.Response, error) {
 	url := fmt.Sprintf("http://localhost:%d/static/%s", port, path)
 	return http.Get(url)
@@ -115,9 +108,14 @@ func startServer(t *testing.T) *exec.Cmd {
 	return nil
 }
 
-func init() {
-	build()
+func fixGOPATH(cwd string) {
+	path := os.Getenv("GOPATH")
+	if len(path) == 0 {
+		os.Setenv("GOPATH", fmt.Sprintf("%s/../..", cwd))
+	}
+}
 
+func init() {
 	if err := initDir(); err != nil {
 		panic(err)
 	}
@@ -126,14 +124,22 @@ func init() {
 	path := func(name string) string {
 		return fmt.Sprintf("%s/%s", cwd, name)
 	}
+	fixGOPATH(cwd)
+
 	os.Chdir(root)
 	defer os.Chdir(cwd)
 
-	cmd := exec.Command(path("nrsc"), path("test-resources"))
+	cmd := exec.Command("go", "install")
 	if err := cmd.Run(); err != nil {
+		fmt.Printf("error building: %s\n", err)
 		panic(err)
 	}
-	build()
+
+	cmd = exec.Command(path("pack.sh"), "nrsc-test", path("test-resources"))
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("error packing: %s\n", err)
+		panic(err)
+	}
 }
 
 func checkHeaders(t *testing.T, expected map[string]string, headers http.Header) {
@@ -179,7 +185,7 @@ import (
 	"net/http"
 	"os"
 
-	"./nrsc"
+	"nrsc"
 )
 
 type params struct {
@@ -200,7 +206,7 @@ func main() {
 	nrsc.Handle("/static/")
 	http.HandleFunc("/", indexHandler)
 	if err := http.ListenAndServe(":9888", nil); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "error: %d\n", err)
 		os.Exit(1)
 	}
 }

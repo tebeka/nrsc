@@ -18,7 +18,7 @@ const (
 	Version = "0.2.0"
 )
 
-var ResourceMap map[string]Resource
+var ResourceMap map[string]Resource = nil
 
 func loadMap() (map[string]Resource, error) {
 	this := os.Args[0]
@@ -48,6 +48,9 @@ func loadMap() (map[string]Resource, error) {
 }
 
 func Initialize() error {
+	if ResourceMap != nil {
+		return nil
+	}
 	var err error
 	ResourceMap, err = loadMap()
 	return err
@@ -111,12 +114,14 @@ func Get(path string) Resource {
 }
 
 // Handle register HTTP handler under prefix
-func Handle(prefix string) {
+func Handle(prefix string) error {
+	Initialize()
 	if !strings.HasSuffix(prefix, "/") {
 		prefix += "/"
 	}
 	var h handler
 	http.Handle(prefix, http.StripPrefix(prefix, h))
+	return nil
 }
 
 // LoadTemplates loads named templates from resources.
