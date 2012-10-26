@@ -31,7 +31,10 @@ set -e
 tmp="/tmp/nrsc-$(date +%s).zip"
 trap "rm -f ${tmp}" EXIT
 
+# Create zip file
 (cd "${root}" && zip -r "${tmp}" .)
 
+# Append zip to executable
 cat "${tmp}" >> "${exe}"
+# Fix zip offset in file
 zip -q -A "${exe}"
