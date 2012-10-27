@@ -15,7 +15,7 @@ Example code:
 		"net/http"
 		"os"
 
-		"nrsc"
+		"bitbucket.org/tebeka/nrsc"
 	)
 
 	type params struct {

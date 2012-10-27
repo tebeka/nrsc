@@ -72,7 +72,7 @@ Example Code
             "net/http"
             "os"
 
-            "nrsc"
+            "bitbucket.org/tebeka/nrsc"
     )
 
     func indexHandler(w http.ResponseWriter, req *http.Request) {
