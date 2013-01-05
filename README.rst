@@ -23,7 +23,7 @@ Invocation
 ::
 
     go build
-    nrsc <executable> <resource dir>
+    nrsc <executable> <resource dir> [zip options]
 
 
 API
