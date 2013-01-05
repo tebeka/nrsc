@@ -7,6 +7,8 @@ case "$1" in
     -h | --help )
         echo "usage: $(basename $0) EXECTABLE RESOURCE_DIR [ZIP OPTIONS]";
         exit;;
+    --version )
+        echo "nrsc version 0.3.0"; exit;;
 esac
 
 if [ $# -lt 2 ]; then
