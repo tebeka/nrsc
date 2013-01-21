@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -19,6 +20,7 @@ const (
 )
 
 var ResourceMap map[string]Resource = nil
+var initMutex sync.Mutex
 
 func loadMap() (map[string]Resource, error) {
 	this := os.Args[0]
@@ -48,6 +50,9 @@ func loadMap() (map[string]Resource, error) {
 }
 
 func Initialize() error {
+	initMutex.Lock()
+	defer initMutex.Unlock()
+
 	if ResourceMap != nil {
 		return nil
 	}
@@ -86,7 +91,7 @@ func (rsc *resource) ModTime() time.Time {
 type handler int
 
 func (h handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsc := ResourceMap[req.URL.Path]
+	rsc := Get(req.URL.Path)
 	if rsc == nil {
 		http.NotFound(w, req)
 		return
@@ -116,7 +121,10 @@ func Get(path string) Resource {
 
 // Handle register HTTP handler under prefix
 func Handle(prefix string) error {
-	Initialize()
+	if err := Initialize(); err != nil {
+		return err
+	}
+
 	if !strings.HasSuffix(prefix, "/") {
 		prefix += "/"
 	}
@@ -128,6 +136,10 @@ func Handle(prefix string) error {
 // LoadTemplates loads named templates from resources.
 // If the argument "t" is nil, it is created from the first resource.
 func LoadTemplates(t *template.Template, filenames ...string) (*template.Template, error) {
+	if err := Initialize(); err != nil {
+		return nil, err
+	}
+
 	if len(filenames) == 0 {
 		// Not really a problem, but be consistent.
 		return nil, fmt.Errorf("no files named in call to LoadTemplates")
