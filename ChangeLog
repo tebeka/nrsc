@@ -1,3 +1,6 @@
+2013-01-04 version 0.3.1
+    * Call Initialize in LoadTemplates as well (thanks Vincent Rischmann)
+
 2013-01-04 version 0.3.0
     * Allow to pass parameters to zip command (as requested by Josh Holland)
 
