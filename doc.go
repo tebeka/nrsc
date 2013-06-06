@@ -34,6 +34,7 @@ Example code:
 
 	func main() {
 		nrsc.Handle("/static/")
+		nrsc.Mask(".tmpl$")
 		http.HandleFunc("/", indexHandler)
 		if err := http.ListenAndServe(":8080", nil); err != nil {
 			fmt.Fprintf(os.Stderr, "error: %s\n", err)

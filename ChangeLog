@@ -1,3 +1,6 @@
+2013-06-05 version 0.4.0
+    * Added Mask (closing issue #1)
+
 2013-01-04 version 0.3.1
     * Call Initialize in LoadTemplates as well (thanks Vincent Rischmann)
 
