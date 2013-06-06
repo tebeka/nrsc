@@ -16,6 +16,13 @@ const (
 	port = 9888
 )
 
+func TestMask(t *testing.T) {
+	resp := getResp(t, "/static/i.gif")
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("got masked resource - %d\n", resp.StatusCode)
+	}
+}
+
 func TestText(t *testing.T) {
 	expected := map[string]string{
 		"Content-Size": "12",
@@ -109,10 +116,7 @@ func startServer(t *testing.T) *exec.Cmd {
 }
 
 func fixGOPATH(cwd string) {
-	path := os.Getenv("GOPATH")
-	if len(path) == 0 {
-		os.Setenv("GOPATH", fmt.Sprintf("%s/../..", cwd))
-	}
+	os.Setenv("GOPATH", fmt.Sprintf("%s/../..", cwd))
 }
 
 func init() {
@@ -129,7 +133,13 @@ func init() {
 	os.Chdir(root)
 	defer os.Chdir(cwd)
 
-	cmd := exec.Command("go", "install")
+	cmd := exec.Command("go", "install", "nrsc")
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("error installing: %s\n", err)
+		panic(err)
+	}
+
+	cmd = exec.Command("go", "build")
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("error building: %s\n", err)
 		panic(err)
@@ -158,18 +168,24 @@ func checkHeaders(t *testing.T, expected map[string]string, headers http.Header)
 	}
 }
 
-func checkPath(t *testing.T, path string, expected map[string]string) {
+func getResp(t *testing.T, path string) *http.Response {
 	server := startServer(t)
 	if server == nil {
-		return
+		return nil
 	}
 	defer server.Process.Kill()
 
 	resp, err := get(path)
 	if err != nil {
 		t.Fatalf("%s\n", err)
+		return nil
 	}
 
+	return resp
+}
+
+func checkPath(t *testing.T, path string, expected map[string]string) {
+	resp := getResp(t, path)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("bad reply - %s", resp.Status)
 	}
@@ -184,6 +200,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 
 	"nrsc"
 )
@@ -204,6 +221,7 @@ func indexHandler(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 	nrsc.Handle("/static/")
+	nrsc.Mask(regexp.MustCompile(".gif$"))
 	http.HandleFunc("/", indexHandler)
 	if err := http.ListenAndServe(":%d", nil); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %%s\n", err)
