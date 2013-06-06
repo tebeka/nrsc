@@ -10,17 +10,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
 
 const (
-	Version = "0.3.1"
+	Version = "0.4.0"
 )
 
 var ResourceMap map[string]Resource = nil
 var initMutex sync.Mutex
+var urlMask *regexp.Regexp
 
 func loadMap() (map[string]Resource, error) {
 	this := os.Args[0]
@@ -90,8 +92,22 @@ func (rsc *resource) ModTime() time.Time {
 
 type handler int
 
+func isMasked(path string) bool {
+	if urlMask == nil {
+		return false
+	}
+
+	return urlMask.MatchString(path)
+}
+
 func (h handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rsc := Get(req.URL.Path)
+	path := req.URL.Path
+	if isMasked(path) {
+		http.Error(w, fmt.Sprintf("Unauthorized - %s", path), http.StatusUnauthorized)
+		return
+	}
+
+	rsc := Get(path)
 	if rsc == nil {
 		http.NotFound(w, req)
 		return
@@ -176,4 +192,9 @@ func LoadTemplates(t *template.Template, filenames ...string) (*template.Templat
 		}
 	}
 	return t, nil
+}
+
+// Mask masks URLs from being served (the HTTP server will return 401 Unauthorized)
+func Mask(mask *regexp.Regexp) {
+	urlMask = mask
 }
