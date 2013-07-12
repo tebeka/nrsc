@@ -70,7 +70,7 @@ func appendZip(exe, zipFile string) error {
 	}
 	defer exefo.Close()
 
-	_, err = exefo.Seek(os.SEEK_END, 0)
+	_, err = exefo.Seek(0, os.SEEK_END)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func appendZip(exe, zipFile string) error {
 }
 
 func fixZipOffset(exe string) error {
-	return exec.Command("zip", "-q", "-A", exec).Run()
+	return exec.Command("zip", "-q", "-A", exe).Run()
 }
 
 func main() {
