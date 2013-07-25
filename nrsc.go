@@ -9,6 +9,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -17,15 +18,25 @@ import (
 )
 
 const (
-	Version = "0.4.0"
+	Version = "0.4.1"
 )
 
 var ResourceMap map[string]Resource = nil
 var initMutex sync.Mutex
 var urlMask *regexp.Regexp
 
+
+func execPath() (string, error) {
+	name := os.Args[0]
+	return exec.LookPath(name)
+}
+
 func loadMap() (map[string]Resource, error) {
-	this := os.Args[0]
+	this, err := execPath()
+	if err != nil {
+		return nil, err
+	}
+
 	file, err := os.Open(this)
 	if err != nil {
 		return nil, err
