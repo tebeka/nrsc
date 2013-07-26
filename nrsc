@@ -34,13 +34,15 @@ fi
 # Exit on 1'st error
 set -e
 
-tmp="/tmp/nrsc-$(date +%s).zip"
-trap "rm -f ${tmp}" EXIT
+# The below is due to the retarded OSX mktemp
+tmp=$(mktemp)
+tmpzip=${tmp}.zip
+trap "rm -f ${tmp} ${tmpzip}" EXIT
 
 # Create zip file
-(cd "${root}" && zip -r "${tmp}" . $@)
+(cd "${root}" && zip -r "${tmpzip}" . $@)
 
 # Append zip to executable
-cat "${tmp}" >> "${exe}"
+cat "${tmpzip}" >> "${exe}"
 # Fix zip offset in file
 zip -q -A "${exe}"
