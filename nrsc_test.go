@@ -12,9 +12,22 @@ import (
 )
 
 const (
-	root = "/tmp/nrsc-test"
 	port = 9888
 )
+
+var root string
+
+func init() {
+	root = testDir()
+}
+
+func testDir() string {
+	host, err := os.Hostname()
+	if err != nil {
+		host = "localhost"
+	}
+	return fmt.Sprintf("%s/nrsc-test-%s-%s", os.TempDir(), os.Getenv("USER"), host)
+}
 
 func TestMask(t *testing.T) {
 	resp := getResp(t, "/static/i.gif")
