@@ -57,27 +57,24 @@ func mkzip(root, zip string, zipArgs []string) error {
 	return nil
 }
 
-func appendZip(exe, zipFile string) error {
-	zipfo, err := os.Open(zipFile)
+func appendFile(dest, src string) error {
+	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	defer zipfo.Close()
+	defer in.Close()
 
-	exefo, err := os.OpenFile(exe, os.O_APPEND, os.ModeAppend)
+	out, err := os.OpenFile(dest, os.O_RDWR, 0)
 	if err != nil {
 		return err
 	}
-	defer exefo.Close()
+	out.Seek(0, os.SEEK_END)
+	defer out.Close()
 
-	_, err = exefo.Seek(0, os.SEEK_END)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(zipfo, exefo)
+	_, err = io.Copy(out, in)
 	return err
 }
+
 
 func fixZipOffset(exe string) error {
 	return exec.Command("zip", "-q", "-A", exe).Run()
@@ -116,7 +113,7 @@ func main() {
 		die("error: can't create zip - %s", err)
 	}
 
-	if err := appendZip(exe, zip); err != nil {
+	if err := appendFile(exe, zip); err != nil {
 		die("error: can't append zip to %s - %s", exe, err)
 	}
 

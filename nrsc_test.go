@@ -128,10 +128,6 @@ func startServer(t *testing.T) *exec.Cmd {
 	return nil
 }
 
-func fixGOPATH(cwd string) {
-	os.Setenv("GOPATH", fmt.Sprintf("%s/../..", cwd))
-}
-
 func init() {
 	if err := initDir(); err != nil {
 		panic(err)
@@ -141,24 +137,26 @@ func init() {
 	path := func(name string) string {
 		return fmt.Sprintf("%s/%s", cwd, name)
 	}
-	fixGOPATH(cwd)
+
+	os.Chdir("nrsc")
+	cmd := exec.Command("go", "build")
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("error building nrsc: %s\n", err)
+		panic(err)
+	}
 
 	os.Chdir(root)
 	defer os.Chdir(cwd)
 
-	cmd := exec.Command("go", "install", "nrsc")
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("error installing: %s\n", err)
-		panic(err)
-	}
+	testExe := "nrsc-test"
 
-	cmd = exec.Command("go", "build")
+	cmd = exec.Command("go", "build", "-o", testExe)
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("error building: %s\n", err)
 		panic(err)
 	}
 
-	cmd = exec.Command(path("nrsc"), "nrsc-test", path("test-resources"))
+	cmd = exec.Command(path("nrsc/nrsc"), testExe, path("test-resources"))
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("error packing: %s\n", err)
 		panic(err)
@@ -215,7 +213,7 @@ import (
 	"os"
 	"regexp"
 
-	"nrsc"
+	"bitbucket.org/tebeka/nrsc"
 )
 
 type params struct {
