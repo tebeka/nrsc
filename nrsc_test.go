@@ -17,10 +17,6 @@ const (
 
 var root string
 
-func init() {
-	root = testDir()
-}
-
 func testDir() string {
 	host, err := os.Hostname()
 	if err != nil {
@@ -129,6 +125,8 @@ func startServer(t *testing.T) *exec.Cmd {
 }
 
 func init() {
+	root = testDir()
+
 	if err := initDir(); err != nil {
 		panic(err)
 	}
