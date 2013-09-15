@@ -3,7 +3,7 @@
 Making it happen:
 	1. Add code to serve resources (see example below)
 	2. Compile your executable
-	3. Run the `nrsc` script from https://bitbucket.org/tebeka/nrsc/src
+	3. Run "nrsc /path/to/exe /path/to/resources"
 	4. Deploy
 
 Example code:
