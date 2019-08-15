@@ -1,5 +1,7 @@
 # `nrsc` - Resource Compiler for Go
 
+**This package is unmaintained** Feel free to fork away.
+
 `nrsc`  a directory of resource into a Go source file so you can still
 deploy a single executable as a web server with all the CSS, image files, JS ...
 included.
@@ -7,8 +9,8 @@ included.
 
 ## Installing
 
-    go get bitbucket.org/tebeka/nrsc
-    go get bitbucket.org/tebeka/nrsc/nrsc
+    go get github.com/tebeka/nrsc
+    go get github.com/tebeka/nrsc/nrsc
 
 (The 2'nd command will grab the nrsc executable)
 
@@ -64,7 +66,7 @@ Returns modification time (to be used with `Last-Modified` HTTP header).
             "net/http"
             "os"
 
-            "bitbucket.org/tebeka/nrsc"
+            "github.com/tebeka/nrsc"
     )
 
     func indexHandler(w http.ResponseWriter, req *http.Request) {
@@ -82,9 +84,9 @@ Returns modification time (to be used with `Last-Modified` HTTP header).
 
 
 ## Contact
-https://bitbucket.org/tebeka/nrsc
+https://github.com/tebeka/nrsc
     
 ## License
 MIT (see [LICENSE.txt][license])
 
-[license]: https://bitbucket.org/tebeka/nrsc/src/tip/LICENSE.txt
+[license]: https://github.com/tebeka/nrsc/src/tip/LICENSE.txt
